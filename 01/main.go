@@ -15,32 +15,32 @@ func check(e error) {
 }
 
 func part1(frequencies *[][]byte) {
-	resultingFrequency := 0
+	result := 0
 	for i := 0; i < len(*frequencies); i++ {
 		frequency, err := strconv.Atoi(string((*frequencies)[i]))
 		check(err)
-		resultingFrequency += frequency
+		result += frequency
 	}
-	fmt.Print("Part 1: " + strconv.Itoa(resultingFrequency) + "\n")
+	fmt.Print("Part 1: " + strconv.Itoa(result) + "\n")
 }
 
 func part2(frequencies *[][]byte) {
-	reachedSameFrequencyTwice := false
-	resultingFreq := 0
+	done := false
+	result := 0
 	seenFrequencies := make(map[int]bool)
-	for !reachedSameFrequencyTwice {
+	for !done {
 		for i := 0; i < len(*frequencies); i++ {
 			frequency, err := strconv.Atoi(string((*frequencies)[i]))
 			check(err)
-			resultingFreq += frequency
+			result += frequency
 
-			if _, ok := seenFrequencies[resultingFreq]; ok {
-				fmt.Print("Part 2: " + strconv.Itoa(resultingFreq) + "\n")
-				reachedSameFrequencyTwice = true
+			if _, ok := seenFrequencies[result]; ok {
+				fmt.Print("Part 2: " + strconv.Itoa(result) + "\n")
+				done = true
 				break
 			}
 
-			seenFrequencies[resultingFreq] = true
+			seenFrequencies[result] = true
 		}
 	}
 }
