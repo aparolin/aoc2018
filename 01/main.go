@@ -14,28 +14,27 @@ func check(e error) {
 	}
 }
 
-func part1(frequencies *[][]byte) {
-	result := 0
+func part1(frequencies *[]int64) {
+	var result int64 = 0
 	for i := 0; i < len(*frequencies); i++ {
-		frequency, err := strconv.Atoi(string((*frequencies)[i]))
-		check(err)
+		frequency := (*frequencies)[i]
 		result += frequency
 	}
-	fmt.Print("Part 1: " + strconv.Itoa(result) + "\n")
+	fmt.Printf("Part 1: %v\n", result)
 }
 
-func part2(frequencies *[][]byte) {
+func part2(frequencies *[]int64) {
 	done := false
-	result := 0
-	seenFrequencies := make(map[int]bool)
+	var result int64 = 0
+	seenFrequencies := make(map[int64]bool)
 	for !done {
 		for i := 0; i < len(*frequencies); i++ {
-			frequency, err := strconv.Atoi(string((*frequencies)[i]))
-			check(err)
+			frequency := (*frequencies)[i]
+
 			result += frequency
 
 			if _, ok := seenFrequencies[result]; ok {
-				fmt.Print("Part 2: " + strconv.Itoa(result) + "\n")
+				fmt.Printf("Part 2: %v\n", result)
 				done = true
 				break
 			}
@@ -51,7 +50,12 @@ func main() {
 	dat, err := ioutil.ReadFile("input.txt")
 	check(err)
 
-	frequencies := bytes.Split(dat, []byte("\r\n"))
+	tokens := bytes.Split(dat, []byte("\r\n"))
+	frequencies := make([]int64, len(tokens))
+	for i := 0; i < len(frequencies); i++ {
+		val, _ := strconv.ParseInt(string(tokens[i]), 10, 64)
+		frequencies[i] = val
+	}
 
 	part1(&frequencies)
 	part2(&frequencies)
