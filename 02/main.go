@@ -39,7 +39,7 @@ func repeatingLetters(code []byte) (int, int) {
 	return twoLetters, threeLetters
 }
 
-func part1(codes [][]byte) {
+func part1(codes [][]byte) int {
 	twoLetters := 0
 	threeLetters := 0
 	for i := 0; i < len(codes); i++ {
@@ -48,8 +48,7 @@ func part1(codes [][]byte) {
 		threeLetters += three
 	}
 
-	result := twoLetters * threeLetters
-	fmt.Printf("Part 1: %d\n", result)
+	return twoLetters * threeLetters
 }
 
 func compareCodes(code1 []byte, code2 []byte) (int, []byte) {
@@ -67,24 +66,20 @@ func compareCodes(code1 []byte, code2 []byte) (int, []byte) {
 	}
 
 	return diff, commonLetters
-
 }
 
-func part2(codes [][]byte) {
-	done := false
+func part2(codes [][]byte) string {
 	for i := 0; i < len(codes)-1; i++ {
 		for j := i + 1; j < len(codes); j++ {
 			diff, commonLetters := compareCodes(codes[i], codes[j])
 			if diff == 1 {
-				fmt.Printf("Part 2: %v\n", string(commonLetters))
-				break
+				return string(commonLetters)
 			}
 		}
-
-		if done {
-			break
-		}
 	}
+
+	//should never happen
+	return ""
 }
 
 func main() {
@@ -95,8 +90,8 @@ func main() {
 
 	codes := bytes.Split(dat, []byte("\r\n"))
 
-	part1(codes)
-	part2(codes)
+	fmt.Printf("Part 1: %v\n", part1(codes))
+	fmt.Printf("Part 2: %v\n", part2(codes))
 
 	elapsed := time.Since(start)
 	fmt.Print("Execution time: " + elapsed.String())
