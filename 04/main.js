@@ -12,7 +12,6 @@ records.forEach(record => {
   parsedRecords.push({
     timestamp: new Date(timestamp),
     date: timestamp.split(" ")[0],
-    hour: parseInt(timestamp.split(" ")[1].split(":")[0]),
     minute: parseInt(timestamp.split(" ")[1].split(":")[1]),
     action
   })
@@ -57,15 +56,26 @@ for (let record of parsedRecords) {
 
 let guardSleptMostID = 0;
 let maxSleepingTime = 0;
+let sleepMinuteGuardID = 0;
+let minuteSleptMost = -1;
+let maxValue = -1;
 guards.forEach((guard, id) => {
   if (guard.totalSleeping > maxSleepingTime){
     maxSleepingTime = guard.totalSleeping;
     guardSleptMostID = id;
   }
+
+  guard.sleepingMinutes.forEach((value, idx) => {
+    if (value > maxValue){
+      maxValue = value;
+      minuteSleptMost = idx;
+      sleepMinuteGuardID = parseInt(id);
+    }
+  })
 });
 
 let maxSleepingMinute = -1;
-let maxValue = -1;
+maxValue = -1;
 guards.get(guardSleptMostID.toString()).sleepingMinutes.forEach((value, idx) => {
   if (value > maxValue){
     maxSleepingMinute = idx;
@@ -73,18 +83,5 @@ guards.get(guardSleptMostID.toString()).sleepingMinutes.forEach((value, idx) => 
   }
 });
 
-console.log(maxSleepingMinute * guardSleptMostID)
-
-let guardMostFrequentlySleepSameMinute = 0;
-let minuteWithMostFrequency = -1;
-maxValue = -1;
-guards.forEach((guard, id) => {
-  guard.sleepingMinutes.forEach((value, idx) => {
-    if (value > maxValue){
-      maxValue = value;
-      minuteWithMostFrequency = idx;
-      guardMostFrequentlySleepSameMinute = parseInt(id);
-    }
-  })
-})
-console.log(minuteWithMostFrequency, guardMostFrequentlySleepSameMinute, minuteWithMostFrequency * guardMostFrequentlySleepSameMinute);
+console.log(`Part 1: ${maxSleepingMinute * guardSleptMostID}`);
+console.log(`Part 2: ${minuteSleptMost * sleepMinuteGuardID}`);
