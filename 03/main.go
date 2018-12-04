@@ -9,17 +9,6 @@ import (
 	"time"
 )
 
-func part1(claims [][]byte) int {
-	r := regexp.MustCompile(`@ (\d+),(\d+): (\d+)x(\d+)`)
-	r.FindStringSubmatch(string(claims[0]))
-	tokens := r.SubexpNames()
-
-	x := tokens[0]
-
-	fmt.Printf("%v\n", x)
-	return 1
-}
-
 func main() {
 	start := time.Now()
 
