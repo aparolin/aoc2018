@@ -1,3 +1,5 @@
+const start = new Date();
+
 const fs = require('fs');
 
 const inputString = fs.readFileSync('input.txt').toString();
@@ -52,3 +54,6 @@ for (let [id, area] of areas){
     break;
   }
 }
+
+const elapsed = new Date() - start;
+console.log(`Execution time: ${elapsed}ms`);
