@@ -38,6 +38,7 @@ func main() {
 	areas := make(map[string]int)
 
 	var re = regexp.MustCompile(`#(\d+) @ (\d+),(\d+): (\d+)x(\d+)`)
+	overlap := 0
 	for i := 0; i < len(claims); i++ {
 		tokens := re.FindStringSubmatch(string(claims[i]))
 
@@ -52,20 +53,12 @@ func main() {
 
 		for row := top; row < top+height; row++ {
 			for col := left; col < left+width; col++ {
-				if fabric[row][col] != string('.') {
-					fabric[row][col] = string('X')
-				} else {
+				if fabric[row][col] == string('.') {
 					fabric[row][col] = id
+				} else if fabric[row][col] != string('X') {
+					fabric[row][col] = string('X')
+					overlap++
 				}
-			}
-		}
-	}
-
-	overlap := 0
-	for r := 0; r < len(fabric); r++ {
-		for c := 0; c < len(fabric[r]); c++ {
-			if fabric[r][c] == string('X') {
-				overlap++
 			}
 		}
 	}

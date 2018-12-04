@@ -14,6 +14,7 @@ for (let row = 0; row < size; row++){
   fabric.push(new Array(size).fill('.'));
 }
 
+let overlap = 0;
 claims.forEach((claim, iter) => {
   const tokens = re.exec(claim);
 
@@ -28,20 +29,16 @@ claims.forEach((claim, iter) => {
 
   for (let row = top; row < top + height; row++){
     for (let col = left; col < left + width; col++){
-      if (fabric[row][col] !== '.'){
-        fabric[row][col] = 'X';
-      } else {
+      if (fabric[row][col] === '.'){
         fabric[row][col] = id;
+      } else if (fabric[row][col] !== 'X') {
+        overlap++;
+        fabric[row][col] = 'X';
       }
     }
   }
-
 });
 
-let overlap = 0;
-fabric.forEach(line => {
-  overlap += line.reduce((acc, el) => acc + (el === 'X' ? 1 : 0) ,0);
-});
 console.log(`Part 1: ${overlap}`);
 
 for (let [id, area] of areas){
