@@ -9,29 +9,31 @@ function manhattanDistance(p0, p1){
 
 const points = new Map();
 let id = 1;
-coordinates.forEach(coordinate => {
-  let [x, y] = coordinate.split(", ");
-  points.set(id, [+x, +y]);
-  id++;
-});
-
 let x0 = y0 = Infinity;
 let x1 = y1 = -Infinity;
-points.forEach((point, id) => {
-  if (point[0] <= x0){
-    x0 = point[0];
+coordinates.forEach(coordinate => {
+  let [x, y] = coordinate.split(", ");
+  x = parseInt(x);
+  y = parseInt(y);
+
+  points.set(id, [x, y]);
+
+  if (x <= x0){
+    x0 = x;
   }
-  if (point[1] <= y0){
-    y0 = point[1];
+  if (y <= y0){
+    y0 = y;
   }
 
-  if (point[0] >= x1){
-    x1 = point[0];
+  if (x >= x1){
+    x1 = x;
   }
   
-  if (point[1] >= y1){
-    y1 = point[1]
+  if (y >= y1){
+    y1 = y
   }
+
+  id++;
 });
 
 const areas = new Map();
