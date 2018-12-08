@@ -35,7 +35,8 @@ points.forEach((point, id) => {
 });
 
 const areas = new Map();
-
+const maxSum = 10000;
+let regionSize = 0;
 for (let y = y0; y <= y1; y++){
   for (let x = x0; x <= x1; x++){
     let curCoord = [x, y];
@@ -49,6 +50,13 @@ for (let y = y0; y <= y1; y++){
         id
       });
     });
+
+    let sumOfDistances = distances.reduce((acc, distance) => {
+      return acc + distance.distance;
+    }, 0);
+    if (sumOfDistances < maxSum){
+      regionSize++;
+    }
 
     distances.sort((a, b) => a.distance - b.distance);
     //ignore points that are the same distance to multiple points
@@ -79,3 +87,4 @@ areas.forEach(area => {
 });
 
 console.log(`Part 1: ${largestArea}`);
+console.log(`Part 2: ${regionSize}`);
