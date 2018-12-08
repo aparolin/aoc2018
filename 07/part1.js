@@ -46,8 +46,6 @@ instructions.forEach(instruction => {
 
 let order = [];
 //find the initial step, which has no dependencies
-const firstSteps = [...steps].filter(step => !dependencies.has(step));
-
 let possibleNextSteps = [...steps].filter(step => !dependencies.has(step));
 
 while (possibleNextSteps.length > 0){
