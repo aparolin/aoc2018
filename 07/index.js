@@ -9,7 +9,7 @@ function dependenciesMet(step){
   }
 
   for (let i = 0; i < stepDependencies.length; i++){
-    if (!dependenciesFulfilled.has(stepDependencies[i])){
+    if (!order.includes(stepDependencies[i])){
       fulfilled = false;
       break;
     }
@@ -47,20 +47,8 @@ instructions.forEach(instruction => {
 let order = [];
 //find the initial step, which has no dependencies
 const firstSteps = [...steps].filter(step => !dependencies.has(step));
-// order.push(firstSteps);
 
 let possibleNextSteps = [...steps].filter(step => !dependencies.has(step));
-// //using a queue to keep the possible next steps
-// firstSteps.forEach(step => {
-//   let next = nextSteps.get(step);
-//   for (let i = 0; i < next.length; i++){
-//     if (!possibleNextSteps.includes(next[i])){
-//       possibleNextSteps.push(next[i]);
-//     }
-//   }
-// });
-
-let dependenciesFulfilled = new Set(order[0]);
 
 while (possibleNextSteps.length > 0){
   possibleNextSteps.sort();
@@ -75,7 +63,6 @@ while (possibleNextSteps.length > 0){
   }
 
   order.push(nextStep);
-  dependenciesFulfilled.add(nextStep);
 
   if (nextSteps.has(nextStep)){
     nextSteps.get(nextStep).forEach(step => {
