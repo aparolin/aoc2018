@@ -18,16 +18,29 @@ type node struct {
 	header   []int
 	children []node
 	metadata []int
+	parent   *node
 }
 
-func createNodes(numbers []int, nodes []node, idx int) (int, []node) {
+func createNodes(parent *node, numbers []int, nodes []*node, idx int) (int, []*node) {
 	numChildren := numbers[idx]
 	idx++
 	numMetadata := numbers[idx]
 	idx++
 
+	newNode := node{
+		header:   []int{numChildren, numMetadata},
+		metadata: nil,
+	}
+
+	if parent != nil {
+		newNode.parent = parent
+		parent.children = append(parent.children, newNode)
+	}
+
+	nodes = append(nodes, &newNode)
+
 	for i := 0; i < numChildren; i++ {
-		idx, nodes = createNodes(numbers, nodes, idx)
+		idx, nodes = createNodes(&newNode, numbers, nodes, idx)
 	}
 
 	metadata := make([]int, numMetadata)
@@ -36,19 +49,12 @@ func createNodes(numbers []int, nodes []node, idx int) (int, []node) {
 		idx++
 	}
 
-	newNode := node{
-		header:   []int{numChildren, numMetadata},
-		metadata: metadata}
-	nodes = append(nodes, newNode)
+	newNode.metadata = metadata
 
 	return idx, nodes
 }
 
-func part1(numbers []int) int {
-	//creating with size 0, as we don't know how many nodes we'll have. Is this right?
-	nodes := make([]node, 0)
-	_, nodes = createNodes(numbers, nodes, 0)
-
+func part1(nodes []*node) int {
 	sum := 0
 	for i := range nodes {
 		for j := range nodes[i].metadata {
@@ -57,6 +63,10 @@ func part1(numbers []int) int {
 	}
 
 	return sum
+}
+
+func part2(nodes []node) int {
+	return 0
 }
 
 func main() {
@@ -72,7 +82,11 @@ func main() {
 		numbers[i] = number
 	}
 
-	fmt.Printf("Part 1: %d \n", part1(numbers))
+	//creating with size 0, as we don't know how many nodes we'll have. Is this right?
+	nodes := make([]*node, 0)
+	_, nodes = createNodes(nil, numbers, nodes, 0)
+
+	fmt.Printf("Part 1: %d \n", part1(nodes))
 
 	elapsed := time.Since(start)
 	fmt.Print("Execution time: " + elapsed.String())
