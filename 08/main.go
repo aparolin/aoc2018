@@ -15,10 +15,11 @@ func check(e error) {
 }
 
 type node struct {
-	header   []int
-	children []node
-	metadata []int
-	parent   *node
+	header      []int
+	children    []*node
+	metadata    []int
+	metadataSum int
+	parent      *node
 }
 
 func createNodes(parent *node, numbers []int, nodes []*node, idx int) (int, []*node) {
@@ -28,13 +29,14 @@ func createNodes(parent *node, numbers []int, nodes []*node, idx int) (int, []*n
 	idx++
 
 	newNode := node{
-		header:   []int{numChildren, numMetadata},
-		metadata: nil,
+		header:      []int{numChildren, numMetadata},
+		metadataSum: 0,
+		metadata:    nil,
 	}
 
 	if parent != nil {
 		newNode.parent = parent
-		parent.children = append(parent.children, newNode)
+		parent.children = append(parent.children, &newNode)
 	}
 
 	nodes = append(nodes, &newNode)
@@ -46,6 +48,7 @@ func createNodes(parent *node, numbers []int, nodes []*node, idx int) (int, []*n
 	metadata := make([]int, numMetadata)
 	for i := 0; i < numMetadata; i++ {
 		metadata[i] = numbers[idx]
+		newNode.metadataSum += numbers[idx]
 		idx++
 	}
 
@@ -57,16 +60,41 @@ func createNodes(parent *node, numbers []int, nodes []*node, idx int) (int, []*n
 func part1(nodes []*node) int {
 	sum := 0
 	for i := range nodes {
-		for j := range nodes[i].metadata {
-			sum += nodes[i].metadata[j]
-		}
+		sum += nodes[i].metadataSum
 	}
 
 	return sum
 }
 
-func part2(nodes []node) int {
-	return 0
+func part2(nodes []*node) int {
+	queue := make([]*node, 0)
+	//add root node
+	queue = append(queue, nodes[0])
+
+	//BFS to count the total sum
+	sum := 0
+
+	for len(queue) > 0 {
+		//get first element and discard it
+		n := queue[0]
+		queue = queue[1:]
+
+		if len(n.children) == 0 {
+			sum += n.metadataSum
+		} else {
+			for i := range n.metadata {
+				//no valid reference
+				if n.metadata[i] > len(n.children) {
+					continue
+				}
+
+				//-1 because metadata count begins in 1
+				queue = append(queue, n.children[n.metadata[i]-1])
+			}
+		}
+	}
+
+	return sum
 }
 
 func main() {
@@ -87,6 +115,7 @@ func main() {
 	_, nodes = createNodes(nil, numbers, nodes, 0)
 
 	fmt.Printf("Part 1: %d \n", part1(nodes))
+	fmt.Printf("Part 2: %d \n", part2(nodes))
 
 	elapsed := time.Since(start)
 	fmt.Print("Execution time: " + elapsed.String())
