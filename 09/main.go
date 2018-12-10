@@ -23,27 +23,32 @@ func part1(totalPlayers int, lastMarble int) int {
 
 	currentMarble := &marble0
 
-	//initialize players with 0 points
+	//initialize players scores with 0 points
 	currentPlayer := 0
-	players := make([]int, totalPlayers)
-	for p := range players {
-		players[p] = 0
+	scores := make([]int, totalPlayers)
+	for p := range scores {
+		scores[p] = 0
 	}
 
+	highestScore := 0
 	for i := 1; i <= lastMarble; i++ {
 		if i%23 == 0 {
-			players[currentPlayer] += i
+			scores[currentPlayer] += i
 
 			for k := 0; k < 7; k++ {
 				currentMarble = currentMarble.prev
 			}
 
-			players[currentPlayer] += currentMarble.data
+			scores[currentPlayer] += currentMarble.data
 			//remove marble from list
 			currentMarble.prev.next = currentMarble.next
 			currentMarble.next.prev = currentMarble.prev
 
 			currentMarble = currentMarble.next
+
+			if scores[currentPlayer] > highestScore {
+				highestScore = scores[currentPlayer]
+			}
 		} else {
 			//circle twice to the right of the list
 			for j := 0; j < 2; j++ {
@@ -69,13 +74,6 @@ func part1(totalPlayers int, lastMarble int) int {
 		}
 	}
 
-	highestScore := 0
-	for i := range players {
-		if players[i] > highestScore {
-			highestScore = players[i]
-		}
-	}
-
 	return highestScore
 }
 
@@ -86,7 +84,7 @@ func main() {
 	lastMarble := 71307
 
 	fmt.Printf("Part 1: %d \n", part1(players, lastMarble))
-	fmt.Printf("Part 1: %d \n", part1(players, lastMarble * 100))
+	fmt.Printf("Part 1: %d \n", part1(players, lastMarble*100))
 
 	elapsed := time.Since(start)
 	fmt.Print("Execution time: " + elapsed.String())
