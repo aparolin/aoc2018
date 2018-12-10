@@ -82,7 +82,11 @@ func part1(totalPlayers int, lastMarble int) int {
 func main() {
 	start := time.Now()
 
-	fmt.Printf("Part 1: %d \n", part1(458, 71307))
+	players := 458
+	lastMarble := 71307
+
+	fmt.Printf("Part 1: %d \n", part1(players, lastMarble))
+	fmt.Printf("Part 1: %d \n", part1(players, lastMarble * 100))
 
 	elapsed := time.Since(start)
 	fmt.Print("Execution time: " + elapsed.String())
