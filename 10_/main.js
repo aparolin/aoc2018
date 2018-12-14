@@ -1,5 +1,3 @@
-const fs = require('fs');
-
 function parseLine(line) {
   const re = /position=<\s*(-?\d+),\s*(-?\d+)> velocity=<\s*(-?\d+),\s*(-?\d+)>/
   const tokens = line.match(re);
@@ -70,28 +68,6 @@ function print(points){
   process.stdout.write('\n\n\n\n');
 }
 
-const input = fs.readFileSync('input.txt').toString();
-
-let points = new Map();
-let id = 0;
-input.split('\r\n').forEach(line => {
-  const tokens = parseLine(line);
-  const position = [tokens[0], tokens[1]];
-  const velocity = [tokens[2], tokens[3]];
-
-  const key = `${position[0]},${position[1]}`;
-  const newPoint = {
-    id: id++,
-    position,
-    velocity
-  };
-  if (!points.has(key)){
-    points.set(key, [newPoint]);
-  } else {
-    points.get(key).push(newPoint);
-  }
-});
-
 function formSentence(points){
   //check if every point has a neighbor
   for (let key of points.keys()){
@@ -125,8 +101,40 @@ function formSentence(points){
   return true;
 }
 
+const start = new Date();
+const fs = require('fs');
+
+const input = fs.readFileSync('input.txt').toString();
+
+let points = new Map();
+let id = 0;
+input.split('\r\n').forEach(line => {
+  const tokens = parseLine(line);
+  const position = [tokens[0], tokens[1]];
+  const velocity = [tokens[2], tokens[3]];
+
+  const key = `${position[0]},${position[1]}`;
+  const newPoint = {
+    id: id++,
+    position,
+    velocity
+  };
+  if (!points.has(key)){
+    points.set(key, [newPoint]);
+  } else {
+    points.get(key).push(newPoint);
+  }
+});
+
+let seconds = 0;
 while (!formSentence(points)){
   points = update(points);
+  seconds++;
 }
 
+console.log('Part 1:');
 print(points);
+console.log(`Part 2: ${seconds}`);
+
+const elapsed = new Date() - start;
+console.log(`Total time: ${elapsed}ms`);
