@@ -39,25 +39,30 @@ function shouldBeAlive(state, rules, index){
 
 function run(initialState, rules, generations) {
   const seenStates = new Map();
+  const nextStates = [];
   let state = initialState;
   
   //include some pots at the edges
-  const additionaPots = 100;
+  const additionaPots = 15000;
   let pots = new Array(additionaPots).fill('.').join('');
   state = pots + state + pots;
   leftMostIndex = -additionaPots;
   
+  nextStates.push(state);
+
   // console.log(`0: ${state}`);
   for (let i = 0; i < generations; i++){
-
-    if (i % 1e9 === 0){
-      console.log(i / 1e9);
-    }
-
+    //if we reach this point, we will not be in a loop
+    //no need to keep iterating over the states
     if (seenStates.has(state)){
-      // console.log('Found a match, skipping calculation');
-      state = seenStates.get(state);
-      continue;
+      const amountStates = nextStates.length;
+      const nextStatePosition = seenStates.get(state);
+      const delta = amountStates - nextStatePosition;
+
+      const missingIterations = generations - i;
+      const finalStatePosition = nextStatePosition + (missingIterations % delta) - 1;
+      state = nextStates[finalStatePosition];
+      break;
     }
     
     let newState = '';
@@ -69,8 +74,9 @@ function run(initialState, rules, generations) {
       }
     }
 
-    //add the next generation to the map
-    seenStates.set(state, newState);
+    //add the position of the seen state in the array
+    nextStates.push(newState);
+    seenStates.set(state, nextStates.length-1);
 
     state = newState;
     // console.log(`${i+1}: ${state}`);
