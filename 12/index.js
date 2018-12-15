@@ -23,7 +23,7 @@ function parse(input){
   }
 }
 
-function shouldStayAlive(state, rules, index){
+function shouldBeAlive(state, rules, index){
   let plantArea = '';
   for (i = -2; i <= 2; i++){
     //handle border cases
@@ -38,26 +38,42 @@ function shouldStayAlive(state, rules, index){
 }
 
 function run(initialState, rules, generations) {
+  const seenStates = new Map();
   let state = initialState;
-  let leftMostIndex = 0;
   
-  console.log(`0: ${state}`);
+  //include some pots at the edges
+  const additionaPots = 100;
+  let pots = new Array(additionaPots).fill('.').join('');
+  state = pots + state + pots;
+  leftMostIndex = -additionaPots;
+  
+  // console.log(`0: ${state}`);
   for (let i = 0; i < generations; i++){
-    //incldue some plants at the edges
-    state = '..' + state + '..'
-    leftMostIndex -= 2;
+
+    if (i % 1e9 === 0){
+      console.log(i / 1e9);
+    }
+
+    if (seenStates.has(state)){
+      // console.log('Found a match, skipping calculation');
+      state = seenStates.get(state);
+      continue;
+    }
     
     let newState = '';
     for (let j = 0; j < state.length; j++){
-      if (shouldStayAlive(state, rules, j)){
+      if (shouldBeAlive(state, rules, j)){
         newState += '#';
       } else {
         newState += '.';
       }
     }
 
+    //add the next generation to the map
+    seenStates.set(state, newState);
+
     state = newState;
-    console.log(`${i+1}: ${state}`);
+    // console.log(`${i+1}: ${state}`);
   }
 
   let sumPotsContainingPlants = 0;
@@ -66,11 +82,18 @@ function run(initialState, rules, generations) {
       sumPotsContainingPlants += index + leftMostIndex;
     }
   });
-  console.log(`Part 1: ${sumPotsContainingPlants}`);
+  return sumPotsContainingPlants
 }
+
+const start = new Date();
 
 const fs = require('fs');
 const input = fs.readFileSync('input.txt').toString();
 const parsedInput = parse(input);
-run(parsedInput.initialState, parsedInput.rules, 20);
+
+console.log(`Part 1: ${run(parsedInput.initialState, parsedInput.rules, 20)}`);
+console.log(`Part 2: ${run(parsedInput.initialState, parsedInput.rules, 50000000000)}`);
+
+const elapsed = new Date() - start;
+console.log(`Total time: ${elapsed}ms`);
 
