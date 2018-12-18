@@ -174,27 +174,42 @@ function print(grid, carts){
   }
 }
 
-function part1(){
+function run(part2 = false){
   const {carts, grid} = parseFile('input.txt');
 
   while (true){
     //print(grid, carts)
 
+    //check collisions
+    const cartsToBeRemoved = [];
     for (let i = 0; i < carts.length; i++){
       update(grid, carts[i]);
       
-      //check collisions
       for (let j = 0; j < carts.length; j++){
         if (i === j){
           continue;
         }
-
+        
         if (carts[i].position[0] === carts[j].position[0] && 
           carts[i].position[1] === carts[j].position[1]){
             //invert the coords so that we get X,Y format
-            return `${carts[i].position[1]},${carts[i].position[0]}`;
+            if (part2) {
+              cartsToBeRemoved.push(i);
+              cartsToBeRemoved.push(j);
+            } else {
+              return `${carts[i].position[1]},${carts[i].position[0]}`;
+            }
           }
       }
+    }
+
+    cartsToBeRemoved.sort();
+    cartsToBeRemoved.forEach((cart, index) => {
+      carts.splice(cart - index, 1);
+    });
+
+    if (carts.length === 1){
+      return `${carts[0].position[1]},${carts[0].position[0]}`;
     }
 
     //sort carts
@@ -212,7 +227,8 @@ function part1(){
 }
 
 const start = new Date();
-console.log(`Part 1: ${part1()}`);
+console.log(`Part 1: ${run()}`);
+console.log(`Part 2: ${run(true)}`);
 
 const elapsed = new Date() - start;
 console.log(`Total time: ${elapsed}ms`);
