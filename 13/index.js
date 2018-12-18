@@ -120,13 +120,19 @@ function update(grid, cart){
         cart.direction = directions.up;
       } else if (cart.direction[0] === -1) {
         cart.direction = directions.left;
+      } else {
+        cart.direction = directions.right;
       }
       break;
     case '/':
       if (cart.direction[1] === 1){
         cart.direction = directions.up;
-      } else {
+      } else if (cart.direction[1] === -1) {
         cart.direction = directions.down;
+      } else if (cart.direction[0] === -1){
+        cart.direction = directions.right;
+      } else {
+        cart.direction = directions.left;
       }
       break;
     case '+':
@@ -169,10 +175,10 @@ function print(grid, carts){
 }
 
 function part1(){
-  const {carts, grid} = parseFile('sample_input.txt');
+  const {carts, grid} = parseFile('input.txt');
 
   while (true){
-    print(grid, carts)
+    //print(grid, carts)
 
     for (let i = 0; i < carts.length; i++){
       update(grid, carts[i]);
