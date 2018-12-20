@@ -1,5 +1,3 @@
-const input = 9;
-
 //double linked list
 class Board {
   constructor(score){
@@ -95,6 +93,16 @@ class Board {
     }
     return result;
   }
+
+  toString(initialScore = this.head){
+    let result = '';
+    let score = initialScore
+    while (score) {
+      result += score.value.toString();
+      score = score.next;
+    }
+    return result;
+  }
 }
 
 //nodes of the list
@@ -105,6 +113,8 @@ class Score{
     this.next = null;
   }
 }
+
+const start = new Date();
 
 const numberElves = 2;
 const elves = [];
@@ -121,9 +131,12 @@ for (let i = 0; i < numberElves; i++){
 }
 
 const numberRecipes = 894501;
-for (let i = 0; i < numberRecipes+10; i++){
-  // board.print();
+let i = 0;
+let part2Finished = false;
+let boardAsString = '';
+let lastScore = null;
 
+while (i < numberRecipes+10 || !part2Finished){
   //create new recipe
   const newRecipe = elves.reduce((acc, elf) => acc + elf.score.value, 0);
   newRecipe.toString().split('').forEach(char => {
@@ -135,10 +148,30 @@ for (let i = 0; i < numberRecipes+10; i++){
     const stepsToTheRight = elf.score.value + 1;
     elf.score = board.getScoreAt(stepsToTheRight, elf.score);
   });
+
+  //check part 2 every 1000000 iterations
+  if (i > 10 && i % 1000000 === 0 && !part2Finished){
+    if (!lastScore){
+      boardAsString += board.toString();
+    } else {
+      const newString = board.toString(lastScore.next); 
+      boardAsString += newString;
+    }
+    lastScore = board.tail;
+
+    const indexOfRecipePattern = boardAsString.indexOf(numberRecipes.toString());
+    if (indexOfRecipePattern >= 0){
+      part2Finished = true;
+      console.log(`Part 2: ${boardAsString.substring(0, indexOfRecipePattern).length}`);
+    }
+  }
+
+  i++;
+
+  if (i === numberRecipes+10){
+    console.log(`Part 1:${board.part1(numberRecipes)}`);
+  }
 }
 
-console.log(`Part 1:${board.part1(numberRecipes)}`);
-
-
-
-
+const elapsed = new Date() - start;
+console.log(`Total time: ${elapsed}ms`);
