@@ -13,37 +13,6 @@ class Board {
     }
   }
 
-  appendAt(pos, newScore){
-    if (pos >= this.size) {
-      throw new Error(`Specified pos=${pos} greater or equal than list size: ${this.size}`);
-    }
-
-    if (pos < 0){
-      throw new Error(`pos argument must be a positive integer. Specified pos=${pos} is negative`);
-    }
-
-    let score = this.head;
-    for (let i = 0; i < pos; i++){
-      score = score.next;
-    }
-
-    newScore.prev = score.prev;
-    newScore.next = score;
-
-    if (score.prev){
-      score.prev.next = newScore;
-    } else {
-      this.head = newScore;
-    }
-
-    if (score.next){
-      score.next.prev = newScore;
-    } else {
-      this.tail = newScore;
-    }
-    
-  }
-
   append(newScore) {
     if (!(newScore instanceof Score)){
       throw new Error('newScore must be of type Score');
