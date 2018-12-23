@@ -4,7 +4,7 @@ class Unit {
   constructor(type='G', pos, game){
     this._pos = pos;
     this._type = type;
-    this._hitPoints = 200;
+    this._hp = 200;
     this._attackPower = 3;
     this._game = game;
   }
@@ -17,25 +17,40 @@ class Unit {
     return this._type;
   }
 
-  play(){
-    //tires to move into range of an enemy and then attack
+  get hp(){
+    return this._hp;
+  }
 
-    const enemies = this._game.getEnemiesPositions(this);
-    if (enemies.inAttackRange.length > 0){
-      this._attack(enemies);
-    } else {
+  set hp(newHP){
+    this._hp = newHP;
+
+    if (this._hp <= 0){
+      this._die();
+    }
+  }
+
+  get attackPower(){
+    return this._attackPower;
+  }
+
+  _die(){
+    this._game.map[this.pos[0]][this.pos[1]] = '.';
+    this._game.drop(this);
+  }
+
+  play(){
+    let enemies = this._game.getEnemiesPositions(this);
+
+    if (enemies.inAttackRange.length === 0){
       this._move(enemies.others);
     }
 
-    //identify all possible targets
-
-    //identify open squares in range of each target
-
-    //if not in range and no open squares, end its turn
+    enemies = this._game.getEnemiesPositions(this);
+    this._attack(enemies.inAttackRange);
   }
 
   _move(enemies){
-    console.log(`Unit at ${this._pos[0]},${this._pos[1]} will move`);
+    // console.log(`Unit at ${this._pos[0]},${this._pos[1]} will move`);
     const paths = this._getPathsToEnemies(enemies);
     
     //no path available to reach the enemies
@@ -57,6 +72,7 @@ class Unit {
   }
 
   _getPathsToEnemies(enemies){
+    // console.log('searching for path');
     const targets = new Set();
     enemies.forEach(enemy => {
       this._game.availableSpacesAroundPosition(enemy.pos).forEach(position => {
@@ -64,6 +80,7 @@ class Unit {
       })
     });
 
+    // console.log('going into tree');
     //BFS to find the positions
     const alreadyVisited = new Set();
     const neighbors = this._game.availableSpacesAroundPosition(this.pos).map(n => {
@@ -74,6 +91,7 @@ class Unit {
       }
     });
     const paths = [];
+    // console.log('while...');
     while (neighbors.length > 0){
       let neighbor = neighbors.shift();
       alreadyVisited.add(neighbor.pos.join(','));
@@ -95,6 +113,7 @@ class Unit {
       });
     }
 
+    console.log('sort...');
     paths.sort((p1,p2) => {
       if (p1.distance < p2.distance){
         return -1;
@@ -120,21 +139,39 @@ class Unit {
     return paths;
   }
 
-  _attack(){
-    console.log(`Unit at ${this._pos[0]},${this._pos[1]} will attack`);
-    //identify units adjacent to it. if none available, end its turn
+  _attack(enemies){
+    // console.log(`Unit at ${this._pos[0]},${this._pos[1]} will attack`);
 
-    //select adjacent unit with fewest hit points
+    if (enemies.length === 0){
+      return;
+    }
 
-    //damage = attack power
+    //Sort by hp. If it's the same, sort by reading order
+    enemies.sort((e1, e2) => {
+      if (e1.hp === e2.hp){
+        if (e1.pos[0] < e2.pos[0]){
+          return -1;
+        }
+        if (e1.pos[0] === e2.pos[0] && e1.pos[1] < e2.pos[1]){
+          return -1;
+        }
+      }
 
-    //if unit that took damage ends up with hitpoints <= 0, it dies and square becomes '.'
+      return e1.hp - e2.hp;
+    });
+
+    const enemy = enemies[0];
+    enemy.hp -= this.attackPower;
   }
 }
 
 class Game {
   constructor(fileName){
     this._units = [];
+    this._aliveUnits = {
+      G: 0,
+      E: 0
+    }
     this.map = null;
 
     this._createMap(fileName);
@@ -153,6 +190,7 @@ class Game {
         
         if (char === 'G' || char === 'E') {
           this._units.push(new Unit(char, [rowIdx, colIdx], this));
+          this._aliveUnits[char]++;
         }
       }
 
@@ -169,19 +207,21 @@ class Game {
     }
   }
 
-  _sortUnits(){
-    // this._sortPositionsArray(this._units);
-
-    this._units.sort((u1,u2) => {
-      if (u1.pos[0] < u2.pos[0]){
+  _sortPositionsArray(array){
+    array.sort((p1,p2) => {
+      if (p1.pos[0] < p2.pos[0]){
         return -1;
       }
-      if (u1.pos[0] === u2.pos[0] && u1.pos[1] < u2.pos[1]){
+      if (p1.pos[0] === p2.pos[0] && p1.pos[1] < p2.pos[1]){
         return -1;
       }
 
       return 1;
     });
+  }
+
+  _sortUnits(){
+    this._sortPositionsArray(this._units);
   }
 
   availableSpacesAroundPosition(pos){
@@ -228,19 +268,48 @@ class Game {
     return enemies;
   }
 
-  start() {
-    this._sortUnits();
+  drop(unit){
+    let i = 0;
+    for (i = 0; i < this._units.length; i++){
+      if (this._units[i] === unit){
+        break;
+      }
+    }
+    this._units.splice(i,1);
+    this._aliveUnits[unit.type]--;
+  }
 
-    for (let i = 0; i < 3; i++){
+  start() {
+    
+    // this.printMap();
+    // console.log();
+    let completedRounds = 0;
+    let finished = false;
+    while (!finished){
+      // if (completedRounds % 10===0){
+        // this.printMap();
+      // }
+      // console.log(`Round ${i}`);
+      this._sortUnits();
       this._units.forEach(unit => {
-        unit. play();
+        unit.play();
       });
-      
-      this.printMap();
+
+      if (this._aliveUnits.G === 0 || this._aliveUnits.E === 0){
+        finished = true;
+        const sumHPRemainingUnits = this._units.reduce((sumHP, unit) => {
+          return unit.hp + sumHP;
+        }, 0);
+
+        console.log(`Part 1: ${sumHPRemainingUnits * completedRounds}`);
+      }
+
+      completedRounds++;
+      // this.printMap();
+      // console.log();
     }
   }
 }
 
-const game = new Game('sample_move.txt');
-game.printMap();
+const game = new Game('input.txt');
 game.start();
