@@ -1,9 +1,11 @@
 class Unit {
-  constructor(type='G', pos, game, attributes){
-    const attr = Object.assign(attributes || {}, {
+  constructor(type='G', pos, game, attributes = {}){
+    const defaultAttr = {
       hp: 200,
       attackPower: 3
-    });
+    };
+
+    const attr = Object.assign(defaultAttr, attributes[type] || {});
 
     this._pos = pos;
     this._type = type;

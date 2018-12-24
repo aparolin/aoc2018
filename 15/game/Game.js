@@ -2,7 +2,8 @@ const fs = require('fs');
 const Unit = require('./Unit.js');
 
 class Game {
-  constructor(fileName){
+  constructor(fileName, unitAttributes){
+    this._unitAttr = unitAttributes;
     this._units = [];
     this._aliveUnits = {
       G: 0,
@@ -26,7 +27,7 @@ class Game {
         row.push(char);
         
         if (char === 'G' || char === 'E') {
-          this._units.push(new Unit(char, [rowIdx, colIdx], this));
+          this._units.push(new Unit(char, [rowIdx, colIdx], this, this._unitAttr));
           this._aliveUnits[char]++;
         }
       }
@@ -123,6 +124,8 @@ class Game {
   drop(unit){
     this._unitsToBeEliminated.add(unit);
     this._aliveUnits[unit.type]--;
+
+    // this._matchResults.losses[unit.type]++;
   }
 
   _gameFinished(){
@@ -137,6 +140,7 @@ class Game {
           break;
         }
       }
+      this._matchResults.losses[this._units[i].type]++;
       this._units.splice(i, 1);
     });
   }
@@ -151,13 +155,20 @@ class Game {
     let completedRounds = 0;
     let finished = false;
 
-    let matchResults = {};
+    this._matchResults = {
+      part1: -1,
+      completedRounds: 0,
+      losses: {
+        E: 0,
+        G: 0
+      }
+    };
 
     while (!finished){
       this._unitsToBeEliminated.clear();
 
       this._sortUnits();
-      this._units.forEach((unit, idx) => {
+      this._units.forEach(unit => {
         if(finished){
           return;
         }
@@ -177,13 +188,9 @@ class Game {
             
             return unit.hp + sumHP;
           }, 0);
-          
-          if (idx === this._units.length - this._unitsToBeEliminated.size){
-            completedRounds++;
-          }
 
-          matchResults.part1 = sumHPRemainingUnits * completedRounds;
-          matchResults.completedRounds = completedRounds;
+          this._matchResults.part1 = sumHPRemainingUnits * completedRounds;
+          this._matchResults.completedRounds = completedRounds;
         }
       });
 
@@ -198,7 +205,7 @@ class Game {
       }
     }
 
-    return matchResults;
+    return this._matchResults;
   }
 }
 
