@@ -72,7 +72,6 @@ class Unit {
   }
 
   _getPathsToEnemies(enemies){
-    // console.log('searching for path');
     const targets = new Set();
     enemies.forEach(enemy => {
       this._game.availableSpacesAroundPosition(enemy.pos).forEach(position => {
@@ -80,7 +79,6 @@ class Unit {
       })
     });
 
-    // console.log('going into tree');
     //BFS to find the positions
     const alreadyVisited = new Set();
     const neighbors = this._game.availableSpacesAroundPosition(this.pos).map(n => {
@@ -91,13 +89,21 @@ class Unit {
       }
     });
     const paths = [];
-    // console.log('while...');
     while (neighbors.length > 0){
       let neighbor = neighbors.shift();
+      if (alreadyVisited.has(neighbor.pos.join(','))){
+        continue;
+      }
+
       alreadyVisited.add(neighbor.pos.join(','));
 
       if (targets.has(neighbor.pos.join(','))){
         paths.push(neighbor);
+        // return paths;
+      }
+
+      if (paths.length === targets.size){
+        break;
       }
 
       this._game.availableSpacesAroundPosition(neighbor.pos).forEach(n => {
@@ -113,7 +119,8 @@ class Unit {
       });
     }
 
-    console.log('sort...');
+    // return [];
+
     paths.sort((p1,p2) => {
       if (p1.distance < p2.distance){
         return -1;
@@ -173,6 +180,7 @@ class Game {
       E: 0
     }
     this.map = null;
+    this._unitsToBeEliminated = new Set();
 
     this._createMap(fileName);
   }
@@ -240,6 +248,17 @@ class Game {
         availableSpaces.push([newRow, col]);
       }
     }
+
+    availableSpaces.sort((p1,p2) => {
+      if (p1[0] < p2[0]){
+        return -1;
+      }
+      if (p1[0] === p2[0] && p1[1] < p2[1]){
+        return -1;
+      }
+
+      return 1;
+    });
     return availableSpaces;
   }
 
@@ -250,6 +269,10 @@ class Game {
     }
 
     this._units.forEach(other => {
+      if (this._unitsToBeEliminated.has(other)){
+        return;
+      }
+      
       if (unit === other || unit.type === other.type) {
         return;
       }
@@ -269,47 +292,88 @@ class Game {
   }
 
   drop(unit){
-    let i = 0;
-    for (i = 0; i < this._units.length; i++){
-      if (this._units[i] === unit){
-        break;
-      }
-    }
-    this._units.splice(i,1);
+    // let i = 0;
+    // for (i = 0; i < this._units.length; i++){
+    //   if (this._units[i] === unit){
+    //     break;
+    //   }
+    // }
+    // this._units.splice(i,1);
+    this._unitsToBeEliminated.add(unit);
     this._aliveUnits[unit.type]--;
   }
 
-  start() {
-    
-    // this.printMap();
-    // console.log();
+  start(debugMode=false) {
+    if (debugMode){
+      console.log('Initial state');
+      this.printMap();
+      console.log();
+    }
+
     let completedRounds = 0;
     let finished = false;
     while (!finished){
-      // if (completedRounds % 10===0){
-        // this.printMap();
-      // }
-      // console.log(`Round ${i}`);
+      this._unitsToBeEliminated.clear();
+
       this._sortUnits();
-      this._units.forEach(unit => {
+      this._units.forEach((unit, idx) => {
+        if(finished){
+          return;
+        }
+
+        if (this._unitsToBeEliminated.has(unit)){
+          return;
+        }
+
         unit.play();
+
+        if (this._aliveUnits.G === 0 || this._aliveUnits.E === 0){
+          finished = true;
+          const sumHPRemainingUnits = this._units.reduce((sumHP, unit) => {
+            if (this._unitsToBeEliminated.has(unit)){
+              return sumHP;
+            }
+            
+            return unit.hp + sumHP;
+          }, 0);
+          
+          if (idx === this._units.length - this._unitsToBeEliminated.size){
+            completedRounds++;
+          }
+
+          console.log(`Part 1: ${sumHPRemainingUnits * completedRounds}`);
+        }
       });
 
-      if (this._aliveUnits.G === 0 || this._aliveUnits.E === 0){
-        finished = true;
-        const sumHPRemainingUnits = this._units.reduce((sumHP, unit) => {
-          return unit.hp + sumHP;
-        }, 0);
-
-        console.log(`Part 1: ${sumHPRemainingUnits * completedRounds}`);
-      }
-
       completedRounds++;
-      // this.printMap();
-      // console.log();
+      
+      this._unitsToBeEliminated.forEach(unit => {
+        let i = 0;
+        for (i = 0; i < this._units.length; i++){
+          if (this._units[i] === unit){
+            break;
+          }
+        }
+        this._units.splice(i, 1);
+      });
+
+      if (debugMode){
+        console.log(`After round ${completedRounds}`);
+        this.printMap();
+        console.log();
+      }
     }
   }
 }
 
-const game = new Game('input.txt');
-game.start();
+const fileName = process.argv[2];
+
+if (!fileName){
+  console.log('No filename provided!');
+  console.log('Usage: node index.js [fileName]');
+  process.exit(1);
+}
+
+const game = new Game(fileName);
+const debugMode = process.argv.includes('-d');
+game.start(debugMode);
