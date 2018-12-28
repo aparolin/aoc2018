@@ -18,8 +18,8 @@ test('[Part 1]: Run sample move', t => {
   t.end();
 });
 
-test('[Part 1]: Run sample attack', t => {
-  const game = new Game('./inputs/sample_attack.txt');
+test('[Part 1]: Run sample combat', t => {
+  const game = new Game('./inputs/sample_combat.txt');
   const matchResults = game.run();
 
   t.equal(matchResults.part1, 27730);
@@ -60,14 +60,6 @@ test('[Part 1]: Run sample input 4', t => {
 
 test('[Part 1]: Run sample input 5', t => {
   const game = new Game('./inputs/input5.txt');
-  const matchResults = game.run();
-
-  t.equal(matchResults.part1, 18740);
-  t.end();
-});
-
-test('[Part 2]: Run sample input attack', t => {
-  const game = new Game('./inputs/sample_attack.txt');
   const matchResults = game.run();
 
   t.equal(matchResults.part1, 18740);

@@ -37,10 +37,25 @@ class Game {
   }
 
   printMap(){
+    let unitsInRow = [];
     for (let row = 0; row < this.map.length; row++) {
       for (let col = 0; col < this.map[row].length; col++){
         process.stdout.write(this.map[row][col]);
+
+        if (this.map[row][col] === 'G' || this.map[row][col] === 'E'){
+          const unit = this._units.find(u => {
+            return u.pos[0] === row && u.pos[1] === col;
+          });
+          unitsInRow.push(unit);
+        }
       }
+
+      process.stdout.write('\t');
+      unitsInRow.forEach(u => {
+        process.stdout.write(`${u.type}(${u.hp}),`);
+      });
+      unitsInRow = [];
+
       process.stdout.write('\n');
     }
   }
@@ -168,7 +183,7 @@ class Game {
       this._unitsToBeEliminated.clear();
 
       this._sortUnits();
-      this._units.forEach(unit => {
+      this._units.forEach((unit, unitIdx) => {
         if(finished){
           return;
         }
@@ -189,22 +204,27 @@ class Game {
             return unit.hp + sumHP;
           }, 0);
 
-          this._matchResults.part1 = sumHPRemainingUnits * completedRounds;
-          this._matchResults.completedRounds = completedRounds;
+          let multiplier = completedRounds;
+          //this was the last unit to play anyway
+          if (unitIdx === this._units.length-1){
+            multiplier = completedRounds + 1;
+          }
+
+          this._matchResults.part1 = sumHPRemainingUnits * multiplier;
+          this._matchResults.completedRounds = multiplier;
         }
       });
-
-      completedRounds++;
       
-      this._cleanupUnits();
-
+      completedRounds++;
       if (debugMode){
-        console.log(`After round ${completedRounds}`);
+        console.log(`After ${completedRounds} round(s)`);
         this.printMap();
         console.log();
       }
-    }
 
+      this._cleanupUnits();
+    }
+    
     return this._matchResults;
   }
 }

@@ -17,8 +17,9 @@ function part1(){
 }
 
 function part2(){
-  let attackPower = 3;
+  let attackPower = 4;
   while (true) {
+    console.log(`Starting game with elf attack=${attackPower}`);
     let game = new Game(fileName, {
       E: {
         attackPower
@@ -26,9 +27,9 @@ function part2(){
     });
     let matchResults = game.run(debugMode);
 
-    console.log(matchResults);
+    // console.log(matchResults);
     if (matchResults.losses.E === 0){
-      // console.log(`Part 2: ${matchResults.part1} with attack of ${attackPower}`);
+      console.log(`Part 2: ${matchResults.part1} with attack of ${attackPower}`);
       break;
     }
 
