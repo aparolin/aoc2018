@@ -3,6 +3,9 @@ const Game = require('./game/Game.js');
 const fileName = process.argv[2];
 const debugMode = process.argv.includes('-d');
 
+const p1 = process.argv.includes('-p1');
+const p2 = process.argv.includes('-p2');
+
 if (!fileName){
   console.log('No filename provided!');
   console.log('Usage: node index.js [fileName]');
@@ -37,5 +40,19 @@ function part2(){
   }
 }
 
-part1();
-part2();
+if (p1){
+  part1();
+}
+if (p2){
+  // part2();
+
+  let attackPower = 15;
+  let game = new Game(fileName, {
+    E: {
+      attackPower
+    }
+  });
+  let matchResults = game.run(debugMode);
+  console.log(`Part 2: ${matchResults.part1} with attack of ${attackPower}`);
+
+}

@@ -9,15 +9,13 @@ class Game {
       G: 0,
       E: 0
     }
-    this.map = null;
+    this.map = [];
     this._unitsToBeEliminated = new Set();
 
     this._createMap(fileName);
   }
 
   _createMap(fileName){
-    this.map = [];
-
     const input = fs.readFileSync(fileName).toString();
     input.split('\r\n').forEach((line, rowIdx) => {
       const row = [];
@@ -52,7 +50,7 @@ class Game {
 
       process.stdout.write('\t');
       unitsInRow.forEach(u => {
-        process.stdout.write(`${u.type}(${u.hp}),`);
+        process.stdout.write(`${u.type}(${u.hp}@${u.pos[1]},${u.pos[0]}),`);
       });
       unitsInRow = [];
 
