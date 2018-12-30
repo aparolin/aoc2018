@@ -123,14 +123,7 @@ class Unit {
         return -1;
       }
 
-      //next step is the relevant one
-      while (p1.previous){
-        p1 = p1.previous;
-      }
-      while (p2.previous){
-        p2 = p2.previous;
-      }
-      
+      //consider the reachable position
       if (p1.pos[0] < p2.pos[0]){
         return -1;
       }
