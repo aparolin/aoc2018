@@ -154,6 +154,7 @@ class Game {
         }
       }
       this._matchResults.losses[this._units[i].type]++;
+      // this.map[this._units[i].pos[0]][this._units[i].pos[1]] = '.';
       this._units.splice(i, 1);
     });
   }
