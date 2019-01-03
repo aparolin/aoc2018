@@ -1,5 +1,3 @@
-const registers = new Array(4).fill(0);
-
 function addr(a, b, c){
   registers[c] = registers[a] + registers[b];
 }
@@ -89,8 +87,8 @@ function eqrr(a, b, c){
 }
 
 function testOp(op, instruction, before, after){
-  const {opCode, a, b, c} = parse(instruction);
-  
+  const {opCode, a, b, c} = instruction;
+
   //load registers with before
   for (let i = 0; i < registers.length; i++){
     registers[i] = before[i];
@@ -108,27 +106,35 @@ function testOp(op, instruction, before, after){
   return true;
 }
 
-function parse(instruction){
+function parseInstruction(instruction){
   const [opCode, a, b, c] = instruction.split(' ').map(t => parseInt(t));
   return {opCode, a, b, c};
 }
 
-function part1(lines, ops){
+function part1(input, ops){
   function parseBeforeAfter(s){
     return s.match(/\[(.*)\]/)[1].split(', ').map(i => parseInt(i));
   }
 
+  //create array to map all opCodes to each of their possible functions
+  const possibleOpCodeFunctions = [];
+  while (possibleOpCodeFunctions.push([]) < ops.length);
+
   //execute the instructions in blocks of 3
   let validSamples = 0;
-  for (let i = 0; i < lines.length; i+=4){
-      const before = parseBeforeAfter(lines[i]);
-      const instruction = lines[i+1];
-      const after = parseBeforeAfter(lines[i+2]);
+  for (let i = 0; i < input.length; i+=4){
+      const before = parseBeforeAfter(input[i]);
+      const instruction = parseInstruction(input[i+1]);
+      const after = parseBeforeAfter(input[i+2]);
 
       let validOperations = 0;
       ops.forEach(op => {
         if (testOp(op, instruction, before, after)) {
           validOperations++;
+
+          if (!possibleOpCodeFunctions[instruction.opCode].includes(op.name)){
+            possibleOpCodeFunctions[instruction.opCode].push(op.name);
+          }
         }
       });
 
@@ -137,10 +143,91 @@ function part1(lines, ops){
       }
   }
 
-  return validSamples;
+  //sort by size of array - possible functions
+  possibleOpCodeFunctions.sort((a,b) => {
+    if (a.length < b.length){
+      return -1;
+    }
+    return 1;
+  });
+
+    //let's use the first position of the array as beginning of the backtracking algorithm
+  //as we know it has only one possibility
+  const root = {
+    opCode: 0,
+    opName: possibleOpCodeFunctions[0][0],
+    solved: [possibleOpCodeFunctions[0][0]],
+    previous: null
+  };
+
+  //backtracking algorithm using DPS
+  const nodes = [root];
+  const opCodeFunctionMapping = new Array(ops.length);
+  while (nodes.length > 0){
+    let currentNode = nodes.pop();
+
+    //are we done?
+    if (currentNode.solved.length === ops.length){
+      //fill up the mapping
+      while (currentNode){
+        opCodeFunctionMapping[currentNode.opCode] = eval(currentNode.opName);
+        currentNode = currentNode.previous;
+      }
+
+      break;
+    }
+
+    //check the possible values for the next opCode
+    let possibleNextNodes = possibleOpCodeFunctions[currentNode.opCode+1];
+
+    for (let i = 0; i < possibleNextNodes.length; i++){
+      //if the next node will contain an already checked function name, we don't include it
+      //prunning
+      if (!currentNode.solved.includes(possibleNextNodes[i])){
+        let next = {
+          opCode: currentNode.opCode+1,
+          opName: possibleNextNodes[i],
+          solved: currentNode.solved.slice(),
+          previous: currentNode
+        };
+        next.solved.push(possibleNextNodes[i]);
+        nodes.push(next);
+      }
+    }
+  }
+
+  return {
+    validSamples,
+    opCodeFunctionMapping
+  };
 }
 
-const input = require('fs').readFileSync('input1.txt').toString().split('\r\n');
+function part2(input, codeOpMapping){
+  for (let i = 0; i < registers.length; i++){
+    registers[i] = 0;
+  }
+
+  let i = 0;
+  input.forEach(instruction => {
+    console.log(instruction);
+    const {opCode, a, b, c} = parseInstruction(instruction);
+    
+    //execute function
+    codeOpMapping[opCode](a, b, c);
+    i++;
+  });
+
+  return registers[0];
+}
+
+const fs = require('fs');
+const inputs = ['input1.txt','input2.txt'].map(fileName => {
+  return fs.readFileSync(fileName).toString().split('\r\n');
+})
 const ops = [addr, addi, mulr, muli, banr, bani, borr, bori, setr, seti, gtir, gtri, gtrr, eqir, eqri, eqrr];
 
-console.log(`Part 1: ${part1(input, ops)}`);
+const registers = new Array(4).fill(0);
+
+const resultPart1 = part1(inputs[0], ops);
+console.log(`Part 1: ${resultPart1.validSamples}`);
+console.log(`Part 2: ${part2(inputs[1], resultPart1.opCodeFunctionMapping)}`);
