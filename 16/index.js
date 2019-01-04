@@ -117,8 +117,9 @@ function part1(input, ops){
   }
 
   //create array to map all opCodes to each of their possible functions
+  //initially, all codes are associated to all functions
   const possibleOpCodeFunctions = [];
-  while (possibleOpCodeFunctions.push([]) < ops.length);
+  while (possibleOpCodeFunctions.push(ops.slice().map(f => f.name)) < ops.length);
 
   //execute the instructions in blocks of 3
   let validSamples = 0;
@@ -128,46 +129,51 @@ function part1(input, ops){
       const after = parseBeforeAfter(input[i+2]);
 
       let validOperations = 0;
+      let possibleOperations = [];
       ops.forEach(op => {
         if (testOp(op, instruction, before, after)) {
           validOperations++;
 
-          if (!possibleOpCodeFunctions[instruction.opCode].includes(op.name)){
-            possibleOpCodeFunctions[instruction.opCode].push(op.name);
-          }
+          possibleOperations.push(op.name);
         }
       });
+
+      //possible operations = previous possible with the intersection of the current possible ones
+      let intersectionPossibleOperations = [];
+      for (operationName of possibleOperations){
+        if (possibleOpCodeFunctions[instruction.opCode].includes(operationName)){
+          intersectionPossibleOperations.push(operationName);
+        }
+      }
+      possibleOpCodeFunctions[instruction.opCode] = intersectionPossibleOperations;
 
       if (validOperations >= 3){
         validSamples++;
       }
   }
 
-  //sort by size of array - possible functions
-  possibleOpCodeFunctions.sort((a,b) => {
-    if (a.length < b.length){
-      return -1;
+  //backtracking algorithm using DPS
+
+  //initial nodes are the codes that we are sure can only be assigned to a single function
+  const nodes = [];
+  possibleOpCodeFunctions.forEach((ops, index) => {
+    if (ops.length === 1){
+      nodes.push({
+        opCode: index,
+        opName: ops[0],
+        solvedOps: [ops[0]],
+        solvedCodes: [index],
+        previous: null
+      });
     }
-    return 1;
   });
 
-    //let's use the first position of the array as beginning of the backtracking algorithm
-  //as we know it has only one possibility
-  const root = {
-    opCode: 0,
-    opName: possibleOpCodeFunctions[0][0],
-    solved: [possibleOpCodeFunctions[0][0]],
-    previous: null
-  };
-
-  //backtracking algorithm using DPS
-  const nodes = [root];
   const opCodeFunctionMapping = new Array(ops.length);
   while (nodes.length > 0){
     let currentNode = nodes.pop();
 
     //are we done?
-    if (currentNode.solved.length === ops.length){
+    if (currentNode.solvedOps.length === ops.length){
       //fill up the mapping
       while (currentNode){
         opCodeFunctionMapping[currentNode.opCode] = eval(currentNode.opName);
@@ -178,19 +184,27 @@ function part1(input, ops){
     }
 
     //check the possible values for the next opCode
-    let possibleNextNodes = possibleOpCodeFunctions[currentNode.opCode+1];
+    let possibleNextNodes = possibleOpCodeFunctions[(currentNode.opCode + 1) % possibleOpCodeFunctions.length].map(op => {
+      return {
+        opCode: (currentNode.opCode + 1) % possibleOpCodeFunctions.length,
+        opName: op
+      }
+    });
 
     for (let i = 0; i < possibleNextNodes.length; i++){
       //if the next node will contain an already checked function name, we don't include it
       //prunning
-      if (!currentNode.solved.includes(possibleNextNodes[i])){
+      if (!currentNode.solvedOps.includes(possibleNextNodes[i].opName) &&
+          !currentNode.solvedCodes.includes(possibleNextNodes[i].opCode)){
         let next = {
-          opCode: currentNode.opCode+1,
-          opName: possibleNextNodes[i],
-          solved: currentNode.solved.slice(),
+          opCode: possibleNextNodes[i].opCode,
+          opName: possibleNextNodes[i].opName,
+          solvedOps: currentNode.solvedOps.slice(),
+          solvedCodes: currentNode.solvedCodes.slice(),
           previous: currentNode
         };
-        next.solved.push(possibleNextNodes[i]);
+        next.solvedOps.push(possibleNextNodes[i].opName);
+        next.solvedCodes.push(possibleNextNodes[i].opCode);
         nodes.push(next);
       }
     }
