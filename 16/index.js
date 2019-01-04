@@ -152,8 +152,6 @@ function part1(input, ops){
       }
   }
 
-  //backtracking algorithm using DPS
-
   //initial nodes are the codes that we are sure can only be assigned to a single function
   const nodes = [];
   possibleOpCodeFunctions.forEach((ops, index) => {
@@ -162,12 +160,12 @@ function part1(input, ops){
         opCode: index,
         opName: ops[0],
         solvedOps: [ops[0]],
-        solvedCodes: [index],
         previous: null
       });
     }
   });
 
+  //backtracking algorithm using DPS to find the possibilities
   const opCodeFunctionMapping = new Array(ops.length);
   while (nodes.length > 0){
     let currentNode = nodes.pop();
@@ -183,28 +181,21 @@ function part1(input, ops){
       break;
     }
 
-    //check the possible values for the next opCode
-    let possibleNextNodes = possibleOpCodeFunctions[(currentNode.opCode + 1) % possibleOpCodeFunctions.length].map(op => {
-      return {
-        opCode: (currentNode.opCode + 1) % possibleOpCodeFunctions.length,
-        opName: op
-      }
-    });
+    //check the next opCode possibilities
+    let nextCode = (currentNode.opCode + 1) % possibleOpCodeFunctions.length;
+    let possibleNextNodes = possibleOpCodeFunctions[nextCode];
 
     for (let i = 0; i < possibleNextNodes.length; i++){
       //if the next node will contain an already checked function name, we don't include it
       //prunning
-      if (!currentNode.solvedOps.includes(possibleNextNodes[i].opName) &&
-          !currentNode.solvedCodes.includes(possibleNextNodes[i].opCode)){
+      if (!currentNode.solvedOps.includes(possibleNextNodes[i])){
         let next = {
-          opCode: possibleNextNodes[i].opCode,
-          opName: possibleNextNodes[i].opName,
+          opCode: nextCode,
+          opName: possibleNextNodes[i],
           solvedOps: currentNode.solvedOps.slice(),
-          solvedCodes: currentNode.solvedCodes.slice(),
           previous: currentNode
         };
-        next.solvedOps.push(possibleNextNodes[i].opName);
-        next.solvedCodes.push(possibleNextNodes[i].opCode);
+        next.solvedOps.push(possibleNextNodes[i]);
         nodes.push(next);
       }
     }
@@ -223,7 +214,6 @@ function part2(input, codeOpMapping){
 
   let i = 0;
   input.forEach(instruction => {
-    console.log(instruction);
     const {opCode, a, b, c} = parseInstruction(instruction);
     
     //execute function
