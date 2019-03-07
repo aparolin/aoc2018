@@ -44,65 +44,108 @@ def parse_input(filename):
 
 
 def contains(element, list):
-    return any((element == x).all() for x in list)
+    t = tuple([element[0], element[1], 'block'])
+    if t in list:
+        return True
+
+    return False
+
+
+def rotate_clockwise(vector):
+    rm = np.matrix('0 1; -1 0')
+    return np.squeeze(np.asarray(np.matmul(rm, vector)))
+
+
+def rotate_counter_clockwise(vector):
+    rm = np.matrix('0 -1; 1 0')
+    return np.squeeze(np.asarray(np.matmul(rm, vector)))
 
 
 def produce_water():
-    flow_dir = np.array([1, 0])
     done = False
 
-    # initialize water_flow
-    water_path = [water_source]
+    # define unit vectors
+    down_uv = np.array([1, 0])
+    left_uv = np.array([0, -1])
+    right_uv = np.array([0, 1])
+    up_uv = np.array([-1, 0])
+
+    left_flow_dirs = [down_uv, left_uv, right_uv, up_uv]
+    right_flow_dirs = [down_uv, right_uv, left_uv, up_uv]
+
+    # initialize water_flow with clockwise rotation
+    water_path = set()
+    water_path.add(tuple([water_source[0], water_source[1], 'down']))
+    water_path_flows = [{
+        "prev_pos": [-10, -10],
+        "pos": water_source,
+        "dirindex": 0,
+        "direction": np.array([1, 0]),
+        "rotate": "clockwise",
+        "attempts": 1
+    }]
+
     while not done:
-        next_water_pos = water_path[-1] + flow_dir
+        elements_to_remove = []
 
-        # try to find next position
-        if tuple(next_water_pos) in grid or contains(next_water_pos, water_path):
-            found_next_pos = False
+        for idx, flow in enumerate(water_path_flows):
+            next_dir = left_flow_dirs[flow["dirindex"]] if flow["rotate"] == 'clockwise' else right_flow_dirs[flow["dirindex"]]
+            next_pos = flow["pos"] + next_dir
 
-            blocked_left = False
-            blocked_right = False
+            # hitting clay going down should split the flow
+            if tuple(next_pos) in grid and flow["prev_pos"][0] == flow["pos"][0]-1:
+                # go left
+                next_pos = flow["pos"] + left_uv
 
-            level = 0
-            step = 0
-            while not found_next_pos:
-                flow_dir_left = np.array([level, -step])
-                flow_dir_right = np.array([level, step])
+                # spawn new flow to the right
+                new_flow = {
+                    "prev_pos": [-10, 10],
+                    "pos": flow["pos"],
+                    "direction": down_uv,
+                    "dirindex": 0,
+                    "rotate": "counter_clockwise",
+                    "attempts": 1
+                }
+                water_path_flows.append(new_flow)
 
-                next_water_pos_left = water_path[-1] + flow_dir_left
-                next_water_pos_right = water_path[-1] + flow_dir_right
+            # hitting a wall or another water flow
+            ignored = False
+            flow["attempts"] = 0
+            while tuple(next_pos) in grid or contains(next_pos, water_path):
+                # try to find next available direction
+                flow["dirindex"] = 0 if flow["dirindex"] == len(left_flow_dirs)-1 else flow["dirindex"] + 1
+                if flow["rotate"] == 'clockwise':
+                    flow["direction"] = left_flow_dirs[flow["dirindex"]]
+                else:
+                    flow["direction"] = right_flow_dirs[flow["dirindex"]]
 
-                if not blocked_left:
-                    if tuple(next_water_pos_left) in grid:
-                        blocked_left = True
-                    elif not contains(next_water_pos_left, water_path):
-                        next_water_pos = next_water_pos_left
-                        found_next_pos = True
-                        break
+                next_pos = flow["pos"] + flow["direction"]
+                flow["attempts"] += 1
 
-                if not blocked_right:
-                    if tuple(next_water_pos_right) in grid:
-                        blocked_right = True
-                    elif not contains(next_water_pos_right, water_path):
-                        next_water_pos = next_water_pos_right
-                        found_next_pos = True
-                        break
+                # there's no where to go
+                if flow["attempts"] == 4:
+                    elements_to_remove.append(idx)
+                    flow["attempts"] = 1
+                    ignored = True
+                    break
 
-                step = step + 1
+            if not ignored:
+                # update position and reset direction
+                flow["prev_pos"] = flow["pos"]
+                flow["pos"] = next_pos
 
-                # go up
-                if blocked_left and blocked_right:
-                    level -= 1
-                    blocked_left = False
-                    blocked_right = False
-                    step = 0
+                water_path.add(tuple([flow["pos"][0], flow["pos"][1], 'down' if flow["dirindex"] == 0 else 'block']))
+                print('Filling position [{},{}]'.format(str(flow["pos"][0]), str(flow["pos"][1])))
+                
+                flow["dirindex"] = 0
 
-        if (next_water_pos[0] > depth):
-            done = True
-            print(len(water_path))
+        # remove redundant flows
+        for idx2, el_to_remove_idx in enumerate(elements_to_remove):
+            del water_path_flows[el_to_remove_idx - idx2]
+        elements_to_remove = []
 
-        print('Filling position [{},{}]'.format(str(next_water_pos[0]), str(next_water_pos[1])))
-        water_path.append(next_water_pos)
+        # are we done?
+        done = all(p[0] > depth for p in water_path)
 
 
 water_source = np.array([0, 500])
