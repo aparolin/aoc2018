@@ -43,13 +43,8 @@ def parse_input(filename):
     return grid, depth
 
 
-def contains(element, list):
-    t = tuple([element[0], element[1], 'block'])
-    if t in list:
-        return True
-
-    return False
-
+def conflict(pos, water):
+    return any((pos == x).all() for x in water)
 
 def rotate_clockwise(vector):
     rm = np.matrix('0 1; -1 0')
@@ -61,95 +56,72 @@ def rotate_counter_clockwise(vector):
     return np.squeeze(np.asarray(np.matmul(rm, vector)))
 
 
-def produce_water():
-    done = False
+def run(water_source, clay_map, depth):
+  fall_list = [water_source]
+  print('Filling position [{},{}]'.format(str(water_source[0]), str(water_source[1])))
 
-    # define unit vectors
-    down_uv = np.array([1, 0])
-    left_uv = np.array([0, -1])
-    right_uv = np.array([0, 1])
-    up_uv = np.array([-1, 0])
+  spread_list = []
+  water_path = set([tuple(water_source)])
 
-    left_flow_dirs = [down_uv, left_uv, right_uv, up_uv]
-    right_flow_dirs = [down_uv, right_uv, left_uv, up_uv]
+  while len(fall_list) > 0:
+    cur_pos = fall_list.pop()
+    next_pos = cur_pos + down_uv
 
-    # initialize water_flow with clockwise rotation
-    water_path = set()
-    water_path.add(tuple([water_source[0], water_source[1], 'down']))
-    water_path_flows = [{
-        "prev_pos": [-10, -10],
-        "pos": water_source,
-        "dirindex": 0,
-        "direction": np.array([1, 0]),
-        "rotate": "clockwise",
-        "attempts": 1
-    }]
+    # hit the clay
+    if tuple(next_pos) in clay_map:
+      spread_list.append(cur_pos)
+    elif next_pos[0] <= depth:
+      print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
+      fall_list.append(next_pos)
 
-    while not done:
-        elements_to_remove = []
+    # spread everything
+    while len(spread_list) > 0:
+      cur_pos = spread_list.pop()
 
-        for idx, flow in enumerate(water_path_flows):
-            next_dir = left_flow_dirs[flow["dirindex"]] if flow["rotate"] == 'clockwise' else right_flow_dirs[flow["dirindex"]]
-            next_pos = flow["pos"] + next_dir
+      # spread right
+      next_pos = cur_pos + right_uv
+      dead_end_r = True
+      while tuple(next_pos) not in clay_map:
+        water_path.add(tuple(next_pos))
+        print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
+        
+        # can go down?
+        down_pos = next_pos + down_uv
+        if tuple(down_pos) not in clay_map and not conflict(down_pos, water_path):
+          fall_list.append(down_pos)
+          dead_end_r = False
+          break
+        else:
+          next_pos += right_uv
 
-            # hitting clay going down should split the flow
-            if tuple(next_pos) in grid and flow["prev_pos"][0] == flow["pos"][0]-1:
-                # go left
-                next_pos = flow["pos"] + left_uv
+      # spread left
+      next_pos = cur_pos + left_uv
+      dead_end_l = True
+      while tuple(next_pos) not in clay_map:
+        water_path.add(tuple(next_pos))
+        print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
+        
+        # can go down?
+        down_pos = next_pos + down_uv
+        if tuple(down_pos) not in clay_map and not conflict(down_pos, water_path):
+          fall_list.append(down_pos)
+          dead_end_l = False
+          break
+        else:
+          next_pos += left_uv
 
-                # spawn new flow to the right
-                new_flow = {
-                    "prev_pos": [-10, 10],
-                    "pos": flow["pos"],
-                    "direction": down_uv,
-                    "dirindex": 0,
-                    "rotate": "counter_clockwise",
-                    "attempts": 1
-                }
-                water_path_flows.append(new_flow)
+      # we have to go up
+      if dead_end_l and dead_end_r:
+        spread_list.append(cur_pos + up_uv)
+  
+  print('result', len(water_path))
 
-            # hitting a wall or another water flow
-            ignored = False
-            flow["attempts"] = 0
-            while tuple(next_pos) in grid or contains(next_pos, water_path):
-                # try to find next available direction
-                flow["dirindex"] = 0 if flow["dirindex"] == len(left_flow_dirs)-1 else flow["dirindex"] + 1
-                if flow["rotate"] == 'clockwise':
-                    flow["direction"] = left_flow_dirs[flow["dirindex"]]
-                else:
-                    flow["direction"] = right_flow_dirs[flow["dirindex"]]
+# define some unit vectors
+down_uv = np.array([1,0])
+left_uv = np.array([0, -1])
+right_uv = np.array([0, 1])
+up_uv = np.array([-1, 0])
 
-                next_pos = flow["pos"] + flow["direction"]
-                flow["attempts"] += 1
-
-                # there's no where to go
-                if flow["attempts"] == 4:
-                    elements_to_remove.append(idx)
-                    flow["attempts"] = 1
-                    ignored = True
-                    break
-
-            if not ignored:
-                # update position and reset direction
-                flow["prev_pos"] = flow["pos"]
-                flow["pos"] = next_pos
-
-                water_path.add(tuple([flow["pos"][0], flow["pos"][1], 'down' if flow["dirindex"] == 0 else 'block']))
-                print('Filling position [{},{}]'.format(str(flow["pos"][0]), str(flow["pos"][1])))
-                
-                flow["dirindex"] = 0
-
-        # remove redundant flows
-        for idx2, el_to_remove_idx in enumerate(elements_to_remove):
-            del water_path_flows[el_to_remove_idx - idx2]
-        elements_to_remove = []
-
-        # are we done?
-        done = all(p[0] > depth for p in water_path)
-
-
+clay_map, depth = parse_input('sample_input.txt')
 water_source = np.array([0, 500])
-grid, depth = parse_input('sample_input.txt')
-print(grid)
-print(depth)
-produce_water()
+run(water_source, clay_map, depth)
