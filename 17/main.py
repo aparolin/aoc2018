@@ -1,7 +1,6 @@
 import numpy as np
 import re
 
-
 def parse_input(filename):
     grid = {}
     f = open(filename)
@@ -55,23 +54,22 @@ def rotate_counter_clockwise(vector):
     rm = np.matrix('0 -1; 1 0')
     return np.squeeze(np.asarray(np.matmul(rm, vector)))
 
-
 def run(water_source, clay_map, depth):
   fall_list = [water_source]
-  print('Filling position [{},{}]'.format(str(water_source[0]), str(water_source[1])))
 
   spread_list = []
-  water_path = set([tuple(water_source)])
+  water_path = set()
 
   while len(fall_list) > 0:
     cur_pos = fall_list.pop()
-    next_pos = cur_pos + down_uv
+    # print('Filling position [{},{}]'.format(str(cur_pos[0]), str(cur_pos[1])))
+    water_path.add(tuple(cur_pos))
 
+    next_pos = cur_pos + down_uv
     # hit the clay
     if tuple(next_pos) in clay_map:
       spread_list.append(cur_pos)
     elif next_pos[0] <= depth:
-      print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
       fall_list.append(next_pos)
 
     # spread everything
@@ -83,7 +81,7 @@ def run(water_source, clay_map, depth):
       dead_end_r = True
       while tuple(next_pos) not in clay_map:
         water_path.add(tuple(next_pos))
-        print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
+        # print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
         
         # can go down?
         down_pos = next_pos + down_uv
@@ -99,7 +97,7 @@ def run(water_source, clay_map, depth):
       dead_end_l = True
       while tuple(next_pos) not in clay_map:
         water_path.add(tuple(next_pos))
-        print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
+        # print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
         
         # can go down?
         down_pos = next_pos + down_uv
@@ -114,7 +112,13 @@ def run(water_source, clay_map, depth):
       if dead_end_l and dead_end_r:
         spread_list.append(cur_pos + up_uv)
   
-  print('result', len(water_path))
+  # -1 to remove the water spring
+  return water_path
+  # print('result', len(water_path)-1)
+
+def print_result(result):
+  f = open('result.txt','w')
+ 
 
 # define some unit vectors
 down_uv = np.array([1,0])
@@ -122,6 +126,7 @@ left_uv = np.array([0, -1])
 right_uv = np.array([0, 1])
 up_uv = np.array([-1, 0])
 
-clay_map, depth = parse_input('sample_input.txt')
+clay_map, depth = parse_input('input.txt')
 water_source = np.array([0, 500])
-run(water_source, clay_map, depth)
+water_path = run(water_source, clay_map, depth)
+# print_result(water_path)
