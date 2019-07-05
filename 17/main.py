@@ -1,132 +1,142 @@
-import numpy as np
 import re
+import math
 
-def parse_input(filename):
-    grid = {}
-    f = open(filename)
-    r = '\w=(\d+), ?\w=(\d+)..(\d+)'
+def parse_input(input):
+  scan = {}
+  minY = 0
+  minX = math.inf
+  maxX = maxY = -math.inf
 
-    depth = 0
-    for line in f:
-        groups = list(map(int, re.search(r, line).groups()))
+  with open(input, 'r') as f:
+    content = f.read()
+    lines = content.split('\n')
+    for l in lines:
+      x0 = x1 = y0 = y1 = 0
+      if l[0] == 'x':
+        values = list(map(int, re.search('x=(\d+).*y=(\d+)..(\d+)', l).groups()))
+        x0 = x1 = values[0]
+        y0 = values[1]
+        y1 = values[2]
+      else:
+        values = list(map(int, re.search('y=(\d+).*x=(\d+)..(\d+)', l).groups()))
+        y0 = y1 = values[0]
+        x0 = values[1]
+        x1 = values[2]
 
-        if len(groups) == 0:
-            raise Exception('Could not parse line', line)
+      for x in range(x0, x1+1):
+        for y in range(y0, y1+1):
+          if x < minX:
+            minX = x
+          if x > maxX:
+            maxX = x
+          if y < minY:
+            minY = y
+          if y > maxY:
+            maxY = y
 
-        if line[0] == 'x':
-            col = groups[0]
-            startRow = groups[1]
-            endRow = groups[2]+1
+          scan[(x,y)] = 'clay'
 
-            if groups[2] > depth:
-                depth = groups[2]
+    f.close()
 
-            for row in range(startRow, endRow):
-                grid[(row, col)] = 'clay'
+  return scan, [(minX, minY), (maxX, maxY)]
 
-        elif line[0] == 'y':
-            row = groups[0]
-            startCol = groups[1]
-            endCol = groups[2]+1
-
-            if row > depth:
-                depth = row
-
-            for col in range(startCol, endCol):
-                grid[(row, col)] = 'clay'
-
+def draw_scan(scan, bounds):
+  for y in range(bounds[0][1] - 1, bounds[1][1] + 2):
+    for x in range(bounds[0][0] - 1, bounds[1][0] + 2):
+      if (x,y) in scan:
+        if scan[(x,y)] == 'clay':
+          print('#', end='')
+        elif scan[(x,y)] == 'flowing':
+          print('|', end='')
+        elif scan[(x,y)] == 'stale':
+          print('~', end='')
         else:
-            raise Exception('Unexpected value for input', line)
+          raise Exception('Invalid type in scan: {}'.format(scan[(x,y)]))
+      else:
+        print('.', end='')
+    print('\n')
 
-    # do we need to sort this before returning?
-    return grid, depth
+scan, bounds = parse_input('sample_input.txt')
 
+flow_list = [(500, 0)]
+spreading_list_left = []
+spreading_list_right = []
+stale_list = []
 
-def conflict(pos, water):
-    return any((pos == x).all() for x in water)
+while len(flow_list) > 0:
+  # draw_scan(scan, bounds)
 
-def rotate_clockwise(vector):
-    rm = np.matrix('0 1; -1 0')
-    return np.squeeze(np.asarray(np.matmul(rm, vector)))
+  # print(flow_list)
+  node = flow_list[-1]
 
+  # check if we can go down
+  next_pos = (node[0], node[1]+1)
+  if next_pos not in scan and next_pos[1] <= bounds[1][1]:
+    flow_list.append(next_pos)
+    scan[next_pos] = 'flowing'
+    continue
+  else:
+    if next_pos[1] > bounds[1][1]:
+      flow_list.pop()
+      continue
+    # node_left = (node[0]-1, node[1])
+    # node_right = (node[0]+1, node[1])
+    # if node_left in scan and scan[node_left] == 'flowing' and node_right in scan and scan[node_right] == 'flowing':
+    #   flow_list.pop()
+    #   continue
+    if scan[next_pos] == 'flowing':
+      flow_list.pop()
+      continue
 
-def rotate_counter_clockwise(vector):
-    rm = np.matrix('0 -1; 1 0')
-    return np.squeeze(np.asarray(np.matmul(rm, vector)))
+  # start spreading from current node
+  node = flow_list.pop()
+  hit_left = False
+  hit_right = False
+  left_wall = None
+  right_wall = None
 
-def run(water_source, clay_map, depth):
-  fall_list = [water_source]
+  # spread left
+  spreading_node = node
+  while True:
+    spreading_node_falling = (spreading_node[0], spreading_node[1]+1)
+    if spreading_node_falling not in scan:
+      scan[spreading_node_falling] = 'flowing'
+      flow_list.append(spreading_node_falling)
+      break
+    
+    left_node = (spreading_node[0]-1, spreading_node[1])
+    if left_node not in scan:
+      scan[left_node] = 'flowing'
+      spreading_node = left_node
+    else:
+      left_wall = left_node
+      hit_left = True
+      break
 
-  spread_list = []
-  water_path = set()
+  # spread right
+  spreading_node = node
+  while True:
+    spreading_node_falling = (spreading_node[0], spreading_node[1]+1)
+    if spreading_node_falling not in scan:
+      scan[spreading_node_falling] = 'flowing'
+      flow_list.append(spreading_node_falling)
+      break
+    
+    right_node = (spreading_node[0]+1, spreading_node[1])
+    if right_node not in scan:
+      scan[right_node] = 'flowing'
+      spreading_node = right_node
+    else:
+      right_wall = right_node
+      hit_right = True
+      break
 
-  while len(fall_list) > 0:
-    cur_pos = fall_list.pop()
-    # print('Filling position [{},{}]'.format(str(cur_pos[0]), str(cur_pos[1])))
-    water_path.add(tuple(cur_pos))
+    # if we hit both sides, we are trapped and need to switch the water to stale state
 
-    next_pos = cur_pos + down_uv
-    # hit the clay
-    if tuple(next_pos) in clay_map:
-      spread_list.append(cur_pos)
-    elif next_pos[0] <= depth:
-      fall_list.append(next_pos)
+  if hit_left and hit_right:
+    y = node[1]
+    for x in range(left_wall[0]+1, right_wall[0]):
+      scan[(x,y)] = 'stale'
 
-    # spread everything
-    while len(spread_list) > 0:
-      cur_pos = spread_list.pop()
-
-      # spread right
-      next_pos = cur_pos + right_uv
-      dead_end_r = True
-      while tuple(next_pos) not in clay_map:
-        water_path.add(tuple(next_pos))
-        # print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
-        
-        # can go down?
-        down_pos = next_pos + down_uv
-        if tuple(down_pos) not in clay_map and not conflict(down_pos, water_path):
-          fall_list.append(down_pos)
-          dead_end_r = False
-          break
-        else:
-          next_pos += right_uv
-
-      # spread left
-      next_pos = cur_pos + left_uv
-      dead_end_l = True
-      while tuple(next_pos) not in clay_map:
-        water_path.add(tuple(next_pos))
-        # print('Filling position [{},{}]'.format(str(next_pos[0]), str(next_pos[1])))
-        
-        # can go down?
-        down_pos = next_pos + down_uv
-        if tuple(down_pos) not in clay_map and not conflict(down_pos, water_path):
-          fall_list.append(down_pos)
-          dead_end_l = False
-          break
-        else:
-          next_pos += left_uv
-
-      # we have to go up
-      if dead_end_l and dead_end_r:
-        spread_list.append(cur_pos + up_uv)
-  
-  # -1 to remove the water spring
-  return water_path
-  # print('result', len(water_path)-1)
-
-def print_result(result):
-  f = open('result.txt','w')
- 
-
-# define some unit vectors
-down_uv = np.array([1,0])
-left_uv = np.array([0, -1])
-right_uv = np.array([0, 1])
-up_uv = np.array([-1, 0])
-
-clay_map, depth = parse_input('input.txt')
-water_source = np.array([0, 500])
-water_path = run(water_source, clay_map, depth)
-# print_result(water_path)
+  # input("Press Enter to continue...")
+draw_scan(scan, bounds)
