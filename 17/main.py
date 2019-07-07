@@ -3,8 +3,7 @@ import math
 
 def parse_input(input):
   scan = {}
-  minY = 0
-  minX = math.inf
+  minY = minX = math.inf
   maxX = maxY = -math.inf
 
   with open(input, 'r') as f:
@@ -38,6 +37,11 @@ def parse_input(input):
 
     f.close()
 
+  print(type(minX))
+  print(type(minY))
+  print(type(maxX))
+  print(type(maxY))
+  print([(minX, minY), (maxX, maxY)])
   return scan, [(minX, minY), (maxX, maxY)]
 
 def draw_scan(scan, bounds):
@@ -54,9 +58,53 @@ def draw_scan(scan, bounds):
           raise Exception('Invalid type in scan: {}'.format(scan[(x,y)]))
       else:
         print('.', end='')
-    print('\n')
+    print('\n', end='')
+
+def spread(from_node, dir, flow_list, node_popped):
+  spreading = True
+
+  dir_factor = 1 if dir == 'right' else -1
+
+  wall = None
+  popped = False
+  while spreading:
+    next_node = (from_node[0] + dir_factor, from_node[1])
+    next_node_down = (from_node[0], from_node[1]+1)
+    if next_node_down not in scan:
+      scan[next_node_down] = 'flowing'
+      flow_list.append(next_node_down)
+      break
+    
+    if next_node not in scan:
+      scan[next_node] = 'flowing'
+      flow_list.append(next_node)
+    elif scan[next_node] == 'clay':
+      wall = next_node
+      break
+    elif scan[next_node] == 'flowing':
+      if dir == 'left' or (dir == 'right' and not node_popped):
+        flow_list.remove(from_node)
+        popped = True
+
+      # check if we are trapped anyway
+      while True:
+        next_node = (next_node[0] + dir_factor, next_node[1])
+        if next_node in scan and scan[next_node] == 'clay':
+          spreading = False
+          wall = next_node
+          break
+        elif next_node not in scan:
+          spreading = False
+          break
+
+      spreading = False
+      break
+    from_node = next_node
+
+  return wall, popped
 
 scan, bounds = parse_input('input.txt')
+print(bounds)
 
 flow_list = [(500, 0)]
 spreading_list_left = []
@@ -65,14 +113,13 @@ stale_list = []
 
 while len(flow_list) > 0:
   # print(flow_list)
-
   # draw_scan(scan, bounds)
   # input("Press Enter to continue...")
 
   node = flow_list[-1]
 
   if node in scan and scan[node] == 'stale':
-    flow_list.pop()
+    flow_list.remove(node)
     continue
 
   # check if we can go down or if we should remove elements from the list
@@ -84,119 +131,32 @@ while len(flow_list) > 0:
     continue
   else:
     if next_pos[1] > bounds[1][1]:
-      flow_list.pop()
+      flow_list.remove(node)
       continue
     if scan[next_pos] == 'flowing':
-      flow_list.pop()
+      flow_list.remove(node)
       continue
 
-  hit_left = False
-  hit_right = False
-  left_wall = None
-  right_wall = None
-
-  # spread left
-  spreading_node = node
-  node_removed = False
-
-  spreading_left = True
-  while spreading_left:
-    left_node = (spreading_node[0]-1, spreading_node[1])
-    spreading_node_falling = (spreading_node[0], spreading_node[1]+1)
-    if spreading_node_falling not in scan:
-      scan[spreading_node_falling] = 'flowing'
-      flow_list.append(spreading_node_falling)
-      spreading_left = False
-      break
-    if left_node not in scan:#  or scan[left_node] != 'clay':
-      scan[left_node] = 'flowing'
-      flow_list.append(left_node)
-    elif scan[left_node] == 'clay':
-      # print('hit left wall')
-      left_wall = left_node
-      hit_left = True
-      spreading_left = False
-      break
-    elif scan[left_node] == 'flowing':
-      flow_list.pop()
-      node_removed = True
-
-      # check if we are trapped anyway
-      while True:
-        left_node = (left_node[0]-1, left_node[1])
-        if left_node in scan and scan[left_node] == 'clay':
-          hit_left = True
-          spreading_left = False
-          left_wall = left_node
-          break
-        elif left_node not in scan:
-          hit_left = False
-          spreading_left = False
-          break
-
-      spreading_left = False
-      break
-
-    spreading_node = left_node
-
-  # spread right
-  spreading_node = node
-  # print('spreading to the right from {}'.format(spreading_node))
-  spreading_right = True
-  while spreading_right:
-    right_node = (spreading_node[0]+1, spreading_node[1])
-    spreading_node_falling = (spreading_node[0], spreading_node[1]+1)
-    if spreading_node_falling not in scan:
-      # print('not spreading')
-      scan[spreading_node_falling] = 'flowing'
-      flow_list.append(spreading_node_falling)
-      break
-    
-    if right_node not in scan:# or scan[right_node] != 'clay':
-      scan[right_node] = 'flowing'
-      flow_list.append(right_node)
-    elif scan[right_node] == 'clay':
-      # print('hit right wall')
-      right_wall = right_node
-      hit_right = True
-      break
-    elif scan[right_node] == 'flowing':
-      # print('right node {} is flowing'.format(right_node))
-      if not node_removed:
-        flow_list.pop()
-
-      # check if we are trapped anyway
-      # print('checking if we are trapped anyway')
-      while True:
-        right_node = (right_node[0]+1, right_node[1])
-        # print('checking node {}'.format(right_node))
-        if right_node in scan and scan[right_node] == 'clay':
-          hit_right = True
-          spreading_right = False
-          right_wall = right_node
-          # print('hit a wall on the right')
-          break
-        elif right_node not in scan:
-          # print('not trapped to the right')
-          hit_right = False
-          spreading_right = False
-          break
-
-      spreading_right = False
-      break
-    spreading_node = right_node
+  left_wall, popped = spread(node, 'left', flow_list, False)
+  right_wall, _ = spread(node, 'right', flow_list, popped)
 
   # if we hit both sides, we are trapped and need to switch the water to stale state
-  if hit_left and hit_right:
+  if left_wall is not None and right_wall is not None:
     y = node[1]
     for x in range(left_wall[0]+1, right_wall[0]):
       scan[(x,y)] = 'stale'
 
 draw_scan(scan, bounds)
 
-total = 0
+total_flowing = 0
+total_stale = 0
 for item in scan:
-  if scan[item] == 'flowing' or scan[item] == 'stale':
-    total += 1
+  if item[0] >= bounds[0][0]-1 and item[0] <= bounds[1][0]+1 and \
+  item[1] >= bounds[0][1] and item[1] <= bounds[1][1]:
+    if scan[item] == 'flowing':
+      total_flowing += 1
+    if scan[item] == 'stale':
+      total_stale += 1
 
-print('Result part 1: {}'.format(total))
+print('Result part 1: {}'.format(total_flowing + total_stale))
+print('Result part 2: {}'.format(total_stale))
