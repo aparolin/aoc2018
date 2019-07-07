@@ -56,7 +56,7 @@ def draw_scan(scan, bounds):
         print('.', end='')
     print('\n')
 
-scan, bounds = parse_input('sample_input.txt')
+scan, bounds = parse_input('input.txt')
 
 flow_list = [(500, 0)]
 spreading_list_left = []
@@ -64,10 +64,10 @@ spreading_list_right = []
 stale_list = []
 
 while len(flow_list) > 0:
-  print(flow_list)
+  # print(flow_list)
 
-  draw_scan(scan, bounds)
-  input("Press Enter to continue...")
+  # draw_scan(scan, bounds)
+  # input("Press Enter to continue...")
 
   node = flow_list[-1]
 
@@ -78,7 +78,7 @@ while len(flow_list) > 0:
   # check if we can go down or if we should remove elements from the list
   next_pos = (node[0], node[1]+1)
   if next_pos not in scan and next_pos[1] <= bounds[1][1]:
-    print('current node {} is fine, so next {} will flow'.format(node, next_pos))
+    # print('current node {} is fine, so next {} will flow'.format(node, next_pos))
     flow_list.append(next_pos)
     scan[next_pos] = 'flowing'
     continue
@@ -112,7 +112,7 @@ while len(flow_list) > 0:
       scan[left_node] = 'flowing'
       flow_list.append(left_node)
     elif scan[left_node] == 'clay':
-      print('hit left wall')
+      # print('hit left wall')
       left_wall = left_node
       hit_left = True
       spreading_left = False
@@ -120,32 +120,34 @@ while len(flow_list) > 0:
     elif scan[left_node] == 'flowing':
       flow_list.pop()
       node_removed = True
+
       # check if we are trapped anyway
       while True:
         left_node = (left_node[0]-1, left_node[1])
         if left_node in scan and scan[left_node] == 'clay':
           hit_left = True
           spreading_left = False
+          left_wall = left_node
           break
         elif left_node not in scan:
           hit_left = False
           spreading_left = False
           break
 
-        spreading_left = False
-        break
+      spreading_left = False
+      break
 
     spreading_node = left_node
 
   # spread right
   spreading_node = node
-  print('spreading to the right from {}'.format(spreading_node))
+  # print('spreading to the right from {}'.format(spreading_node))
   spreading_right = True
   while spreading_right:
     right_node = (spreading_node[0]+1, spreading_node[1])
     spreading_node_falling = (spreading_node[0], spreading_node[1]+1)
     if spreading_node_falling not in scan:
-      print('not spreading')
+      # print('not spreading')
       scan[spreading_node_falling] = 'flowing'
       flow_list.append(spreading_node_falling)
       break
@@ -154,34 +156,34 @@ while len(flow_list) > 0:
       scan[right_node] = 'flowing'
       flow_list.append(right_node)
     elif scan[right_node] == 'clay':
-      print('hit right wall')
+      # print('hit right wall')
       right_wall = right_node
       hit_right = True
       break
     elif scan[right_node] == 'flowing':
-      print('right node {} is flowing'.format(right_node))
+      # print('right node {} is flowing'.format(right_node))
       if not node_removed:
         flow_list.pop()
-      break
 
       # check if we are trapped anyway
-      print('checking if we are trapped anyway')
+      # print('checking if we are trapped anyway')
       while True:
         right_node = (right_node[0]+1, right_node[1])
-        print('checking node {}'.format(right_node))
+        # print('checking node {}'.format(right_node))
         if right_node in scan and scan[right_node] == 'clay':
           hit_right = True
           spreading_right = False
-          print('hit a wall on the right')
+          right_wall = right_node
+          # print('hit a wall on the right')
           break
         elif right_node not in scan:
-          print('not trapped to the right')
+          # print('not trapped to the right')
           hit_right = False
           spreading_right = False
           break
 
-        spreading_right = False
-        break
+      spreading_right = False
+      break
     spreading_node = right_node
 
   # if we hit both sides, we are trapped and need to switch the water to stale state
