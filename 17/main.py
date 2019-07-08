@@ -37,11 +37,6 @@ def parse_input(input):
 
     f.close()
 
-  print(type(minX))
-  print(type(minY))
-  print(type(maxX))
-  print(type(maxY))
-  print([(minX, minY), (maxX, maxY)])
   return scan, [(minX, minY), (maxX, maxY)]
 
 def draw_scan(scan, bounds):
@@ -104,18 +99,9 @@ def spread(from_node, dir, flow_list, node_popped):
   return wall, popped
 
 scan, bounds = parse_input('input.txt')
-print(bounds)
 
 flow_list = [(500, 0)]
-spreading_list_left = []
-spreading_list_right = []
-stale_list = []
-
 while len(flow_list) > 0:
-  # print(flow_list)
-  # draw_scan(scan, bounds)
-  # input("Press Enter to continue...")
-
   node = flow_list[-1]
 
   if node in scan and scan[node] == 'stale':
@@ -125,15 +111,11 @@ while len(flow_list) > 0:
   # check if we can go down or if we should remove elements from the list
   next_pos = (node[0], node[1]+1)
   if next_pos not in scan and next_pos[1] <= bounds[1][1]:
-    # print('current node {} is fine, so next {} will flow'.format(node, next_pos))
     flow_list.append(next_pos)
     scan[next_pos] = 'flowing'
     continue
   else:
-    if next_pos[1] > bounds[1][1]:
-      flow_list.remove(node)
-      continue
-    if scan[next_pos] == 'flowing':
+    if next_pos[1] > bounds[1][1] or scan[next_pos] == 'flowing':
       flow_list.remove(node)
       continue
 
@@ -151,6 +133,7 @@ draw_scan(scan, bounds)
 total_flowing = 0
 total_stale = 0
 for item in scan:
+  # allow 1 extra position in x direction at the edges
   if item[0] >= bounds[0][0]-1 and item[0] <= bounds[1][0]+1 and \
   item[1] >= bounds[0][1] and item[1] <= bounds[1][1]:
     if scan[item] == 'flowing':
