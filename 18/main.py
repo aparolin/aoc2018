@@ -1,4 +1,7 @@
 from copy import deepcopy
+import itertools
+
+calculated_grids = {}
 
 def parse_input(path):
   grid = []
@@ -51,6 +54,10 @@ def apply_rules(grid, row, col):
     else:
       return '.'
 
+def grid2key(grid):
+  grid_as_list = itertools.chain.from_iterable(grid)
+  return ''.join(grid_as_list)
+
 def change(grid):
   new_grid = deepcopy(grid)
 
@@ -67,12 +74,25 @@ def print_grid(grid):
     print('\n', end='')
 
 def run(minutes):
+  calculated_grids_catalog = {}
+  calculated_grids = []
+
   grid = parse_input('input.txt')
   for i in range(minutes):
-    # print_grid(grid)
-    grid = change(grid)
-    # print()
-  # print_grid(grid)
+    grid_key = grid2key(grid)
+    
+    if grid_key in calculated_grids_catalog:
+      previous_idx = calculated_grids_catalog[grid_key]
+      delta = i - previous_idx
+      missing_iterations = minutes - i - 1
+      steps = missing_iterations % delta
+
+      grid = calculated_grids[previous_idx + steps]
+      break
+    else:
+      grid = change(grid)
+      calculated_grids_catalog[grid_key] = i
+      calculated_grids.append(grid)
 
   total_wooded = 0
   total_lumberyards = 0
