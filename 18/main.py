@@ -1,8 +1,6 @@
 from copy import deepcopy
 import itertools
 
-calculated_grids = {}
-
 def parse_input(path):
   grid = []
 
@@ -80,7 +78,7 @@ def run(minutes):
   grid = parse_input('input.txt')
   for i in range(minutes):
     grid_key = grid2key(grid)
-    
+
     if grid_key in calculated_grids_catalog:
       previous_idx = calculated_grids_catalog[grid_key]
       delta = i - previous_idx
